@@ -35,10 +35,12 @@ jobs:
       - name: Add the arrival alerts, permissions and icon
         run: |
           set -e
+          # the native files can sit in native-android/ or at the top of the repository
+          SRC=native-android; [ -d "$SRC" ] || SRC=.
           DEST=android/app/src/main/java/io/github/mikeyc67/offshoredays
           mkdir -p "$DEST"
-          cp native-android/*.java "$DEST/"
-          python3 native-android/patch_manifest.py
+          cp "$SRC"/*.java "$DEST/"
+          python3 "$SRC/patch_manifest.py"
           printf "\ndependencies {\n    implementation 'com.google.android.gms:play-services-location:21.3.0'\n}\n" >> android/app/build.gradle
           # app icon from the site's icon, in each size Android uses
           sudo apt-get install -y -qq imagemagick >/dev/null
@@ -87,10 +89,12 @@ jobs:
       - name: Add the arrival alerts and app settings
         run: |
           set -e
-          cp native-ios/FenceManager.swift native-ios/ShipFencePlugin.swift native-ios/MainViewController.swift ios/App/App/
-          cp native-ios/AppDelegate.swift ios/App/App/AppDelegate.swift
+          # the native files can sit in native-ios/ or at the top of the repository
+          SRC=native-ios; [ -d "$SRC" ] || SRC=.
+          cp "$SRC/FenceManager.swift" "$SRC/ShipFencePlugin.swift" "$SRC/MainViewController.swift" ios/App/App/
+          cp "$SRC/AppDelegate.swift" ios/App/App/AppDelegate.swift
           ruby -e "require 'xcodeproj'" 2>/dev/null || gem install xcodeproj --no-document
-          ruby native-ios/add_files.rb
+          ruby "$SRC/add_files.rb"
           sed -i '' 's/customClass="CAPBridgeViewController" customModule="Capacitor"/customClass="MainViewController" customModule="App" customModuleProvider="target"/' ios/App/App/Base.lproj/Main.storyboard
           grep -q 'customClass="MainViewController"' ios/App/App/Base.lproj/Main.storyboard
           PL=ios/App/App/Info.plist
