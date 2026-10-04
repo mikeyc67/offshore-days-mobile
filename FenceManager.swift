@@ -103,7 +103,7 @@ final class FenceManager: NSObject, CLLocationManagerDelegate, UNUserNotificatio
 
     func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification,
                                 withCompletionHandler done: @escaping (UNNotificationPresentationOptions) -> Void) {
-        done([.banner, .sound])
+        if #available(iOS 14.0, *) { done([.banner, .sound]) } else { done([.alert, .sound]) }
     }
 
     func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse,
@@ -124,8 +124,14 @@ final class FenceManager: NSObject, CLLocationManagerDelegate, UNUserNotificatio
 
     // MARK: permission and position
 
+    /// The location permission, asked the iOS 14+ way where available (the app also runs on iOS 13).
+    private var permission: CLAuthorizationStatus {
+        if #available(iOS 14.0, *) { return manager.authorizationStatus }
+        return CLLocationManager.authorizationStatus()
+    }
+
     func authStatus() -> String {
-        switch manager.authorizationStatus {
+        switch permission {
         case .authorizedAlways: return "always"
         case .authorizedWhenInUse: return "whenInUse"
         case .denied: return "denied"
@@ -137,15 +143,25 @@ final class FenceManager: NSObject, CLLocationManagerDelegate, UNUserNotificatio
     /// iOS asks "While using the app" first; once that's granted it can offer "Change to Always Allow".
     func requestAlways() {
         wantAlways = true
-        switch manager.authorizationStatus {
+        switch permission {
         case .notDetermined: manager.requestWhenInUseAuthorization()
         case .authorizedWhenInUse: manager.requestAlwaysAuthorization()
         default: wantAlways = false
         }
     }
 
+    // iOS 14 and later
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
-        let status = manager.authorizationStatus
+        permissionChanged()
+    }
+
+    // iOS 13
+    func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
+        permissionChanged()
+    }
+
+    private func permissionChanged() {
+        let status = permission
         if wantAlways && status == .authorizedWhenInUse {
             wantAlways = false
             manager.requestAlwaysAuthorization()
@@ -159,7 +175,7 @@ final class FenceManager: NSObject, CLLocationManagerDelegate, UNUserNotificatio
     func currentPosition(_ done: @escaping (Result<CLLocation, Error>) -> Void) {
         positionWaiters.append(done)
         manager.desiredAccuracy = kCLLocationAccuracyBest
-        switch manager.authorizationStatus {
+        switch permission {
         case .notDetermined: manager.requestWhenInUseAuthorization()
         case .denied, .restricted: finishPosition(.failure(CLError(.denied)))
         default: manager.requestLocation()
