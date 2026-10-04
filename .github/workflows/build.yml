@@ -29,6 +29,12 @@ jobs:
       - name: Install Capacitor
         run: npm install
 
+      - name: Add Capacitor's page script (lets the page reach the phone's alerts and location)
+        run: |
+          cp node_modules/@capacitor/core/dist/capacitor.js www/capacitor.js
+          perl -0pi -e 's#<head>#<head><script src="capacitor.js"></script>#' www/index.html
+          grep -q 'src="capacitor.js"' www/index.html
+
       - name: Create the Android project
         run: npx cap add android
 
@@ -82,6 +88,12 @@ jobs:
 
       - name: Install Capacitor
         run: npm install
+
+      - name: Add Capacitor's page script (lets the page reach the phone's alerts and location)
+        run: |
+          cp node_modules/@capacitor/core/dist/capacitor.js www/capacitor.js
+          perl -0pi -e 's#<head>#<head><script src="capacitor.js"></script>#' www/index.html
+          grep -q 'src="capacitor.js"' www/index.html
 
       - name: Create the iOS project
         run: npx cap add ios
