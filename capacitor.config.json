@@ -1,0 +1,12 @@
+{
+  "appId": "io.github.mikeyc67.offshoredays",
+  "appName": "Offshore Days",
+  "webDir": "www",
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#0A1520"
+  },
+  "android": {
+    "backgroundColor": "#0A1520"
+  }
+}
